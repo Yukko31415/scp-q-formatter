@@ -264,7 +264,9 @@
 			      :if-does-not-exist :create)
       (format stream *header*)
       (loop :for question :in questions
-	    :do (with-slots (question-number body options) question
+	    :with initialp := t
+	    :do (if initialp (setf initialp nil) (format stream "<hr>~%~%"))
+		(with-slots (question-number body options) question
 		  (make-question-string question-number body options stream))
 	    :finally (terpri stream))
       (loop :for question :in questions
