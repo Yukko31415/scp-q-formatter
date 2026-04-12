@@ -1,10 +1,10 @@
 
 
-(defpackage #:SCP-Q
-	    (:use #:cl)
-	    (:export #:main))
+(uiop:define-package #:scp-q-formatter
+  (:mix #:cl #:uiop #:alexandria)
+  (:export #:main))
 
-(in-package #:SCP-Q)
+(in-package #:scp-q-formatter)
 
 
 
