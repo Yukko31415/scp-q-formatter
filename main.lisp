@@ -176,7 +176,7 @@
 
 
 ;; ----------------
-;;;; make-question
+;;;; make-questions
 ;; ----------------
 
 ;; Q. 「SCP-001-JP - アースリングス」において、SCP-001-JPを構成する大多数の物質はどの元素を主体としているでしょう？
@@ -239,6 +239,12 @@
 (defun make-questions (pathname)
   (with-input-file (stream pathname)
     (%make-questions stream)))
+
+
+
+;; -------
+;;;; main
+;; -------
 
 (defun %make-new-pathname (pathname &optional number)
   (let ((name (make-pathname :directory (pathname-directory pathname)
