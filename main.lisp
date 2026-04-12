@@ -23,32 +23,32 @@
 ;; 内容が変わらないもの
 
 (defparameter *header*
-  (concatenate 'string
-	       "[[include component:coltop show=▶ クイズ|hide=▲ 閉じる]]~%"
-	       "[[html]]~%"
-	       "<!DOCTYPE html>~%"
-	       "<html>~%"
-	       "<head>~%"
-	       "  <meta content=\"width=device-width ,initial-scale=1.0\" name=\"viewport\">~%"
-	       "  <style>~%"
-	       "  @import url (\"https://d3g0gp89917ko0.cloudfront.net/v--291054f06006/common--theme/base/css/style.css\");~%"
-	       "  @import url (\"https://scp-jp.wdfiles.com/local--code/component%3Atheme/2\");~%"
-	       "  </style>~%"
-	       "  <title>問答部門からの挑戦状</title>~%"
-	       "</head>~%"
-	       "<body>~%~%"))
+  (format nil "~{~A~%~}~%"
+	  '("[[include component:coltop show=▶ クイズ|hide=▲ 閉じる]]"
+	    "[[html]]"
+	    "<!DOCTYPE html>"
+	    "<html>"
+	    "<head>"
+	    "  <meta content=\"width=device-width ,initial-scale=1.0\" name=\"viewport\">"
+	    "  <style>"
+	    "  @import url (\"https://d3g0gp89917ko0.cloudfront.net/v--291054f06006/common--theme/base/css/style.css\");"
+	    "  @import url (\"https://scp-jp.wdfiles.com/local--code/component%3Atheme/2\");"
+	    "  </style>"
+	    "  <title>問答部門からの挑戦状</title>"
+	    "</head>"
+	    "<body>")))
 
 (defparameter *tail*
-  (concatenate 'string
-	       "</body>~%"
-	       "</html>~%"
-	       "[[/html]]~%"
-	       "[[include component:colend hide=▲ クイズを閉じる]]~%"))
+  (format nil "~{~A~^~%~}"
+	  '("</body>"
+	    "</html>"
+	    "[[/html]]"
+	    "[[include component:colend hide=▲ クイズを閉じる]]")))
 
 
-(defparameter *js-start* "<script type=\"text/javascript\">~%~%")
+(defparameter *js-start* (format nil "<script type=\"text/javascript\">~%~%"))
 
-(defparameter *js-end* "</script>~%~%")
+(defparameter *js-end* (format nil "</script>~%~%"))
 
 
 
@@ -262,7 +262,7 @@
 	 (questions (make-questions pathname)))
     (with-output-file (stream (make-new-pathname pathname)
 			      :if-does-not-exist :create)
-      (format stream *header*)
+      (format stream "~A" *header*)
       (loop :for question :in questions
 	    :with initialp := t
 	    :do (if initialp (setf initialp nil) (format stream "<hr>~%~%"))
@@ -270,11 +270,11 @@
 		  (make-question-string question-number body options stream))
 	    :finally (terpri stream))
       (loop :for question :in questions
-	    :initially (format stream *js-start*)
+	    :initially (format stream "~A" *js-start*)
 	    :do (with-slots (question-number ans-number option-length) question
 		  (make-true-or-false-string question-number ans-number option-length stream))
-	    :finally (format stream *js-end*))
-      (format stream *tail*)))
+	    :finally (format stream "~A" *js-end*))
+      (format stream "~A" *tail*)))
   (quit))
 
 
