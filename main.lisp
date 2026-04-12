@@ -8,270 +8,278 @@
 
 
 
-
-#| プロット
-
-
-まずフラグ管理をするか
-
-Q: が出てきた時に立つフラグ
-解答: でフラグを初期化
-
-Q: のフラグが立っている間にもう一度Q: が来るとエラー
-Q: の後は選択肢が来ることを前提とする
-
-
-プロットここまで |#
-
-(defun read-all-input-to-string ()
-  "標準入力からEOFに達するまですべての行を読み込み、
-   一つの文字列にまとめて返す"
-  (with-output-to-string (s)
-			 (loop for line = (read-line *standard-input* nil nil)
-			       while line
-			       do (write-string line s)
-			       (write-char #\newline s))))
-
-
-(defmacro deflag (name)
-  (let ((flag-name (intern (format nil "*~a*" (string-upcase name)))))
-    `(progn
-       (defparameter ,flag-name nil)
-       (defun ,flag-name (flag)
-	 (setf ,flag-name flag)))))
-
-(defmacro defp (name &optional (number 0))
-  (let ((flag-name (intern (format nil "*~a*" (string-upcase name)))))
-    `(progn
-       (defparameter ,flag-name ,number)
-       (defun ,flag-name (flag)
-	 (case flag
-	       (inc (incf ,flag-name))
-	       (res (setf ,flag-name 0)))))))
-
-(defmacro put (&rest body)
-  `(the (or string null) (format s ,@body)))
-
-(defmacro defun-s (name args &body body)
-  `(defun ,name ,args
-     (the string
-	  (with-output-to-string (s)
-				 ,@body))))
-
-;; 変数宣言
-
-(defparameter *stdin-input* nil)
-(defparameter *list*  nil)
-
-;; 変数宣言ここまで
-
-
-;; フラグ作成
-
-(deflag questionp)
-
-;; フラグ作成終了
-
-
-;; parameter定義
-
-(defp question-number)
-(defp ans-value)
-
-;; 定義終了
-
-
-;; 内容の変わらないI/O
-
-(defun-s head ()
-	 "ヘッダー"
-	 (put "
-[[include component:coltop show=▶ クイズ|hide=▲ 閉じる]]
-[[html]]
-<!DOCTYPE html>
-<html>
-<head>
-    <meta content=\"width=device-width,initial-scale=1.0\" name=\"viewport\">
-    <style>
-    @import url(\"https://d3g0gp89917ko0.cloudfront.net/v--291054f06006/common--theme/base/css/style.css\");
-    @import url(\"https://scp-jp.wdfiles.com/local--code/component%3Atheme/2\");
-    </style>
-    <title>問答部門からの挑戦状</title>
-</head>
-
-<body>"))
-
-
-(defun-s end ()
-	 (put "
-</body>
-</html>
-[[/html]]
-[[include component:colend hide=▲ クイズを閉じる]]
-"))
-
-
-(defun-s js-start ()
-	 "JSの始まり"
-	 (put "~%<script type=\"text/javascript\">" i))
-
-(defun-s js-end ()
-	 "JSの終わり"
-	 (put "</script>"))
-
-
-(defun increment-char-by-number (number)
-  "指定した文字を指定した数字分インクリメントして返す"
-  (code-char (+ (char-code #\a) number)))
+;; プロット
+;; まずフラグ管理をするか
+;; Q: が出てきた時に立つフラグ
+;; 解答: でフラグを初期化
+;; Q: のフラグが立っている間にもう一度Q: が来るとエラー
+;; Q: の後は選択肢が来ることを前提とする
+;; プロットここまで
 
 
 
-#|
-
-<p><b>問1:</b> 「SCP-3801-JP - おっぱいのんで、ねんねしな」において、アルバートが飼育していたヨリックはどの動物でしょう？</p>
-<form id="quiz1" name="quiz1">
-     <input name="answer" type="radio" value="a"> イエイヌ<br>
-     <input name="answer" type="radio" value="b"> ラット<br>
-     <input name="answer" type="radio" value="c"> ニワトリ<br>
-     <input name="answer" type="radio" value="d"> キンギョ<br>
-<br>
-     <input onclick="TrueOrFalse1()" type="button" value="解答する">
-    </form>
-<p id="ans1">〔解答はここに表示されます〕</p>
-
-|#
 
 
-#|
+;; 内容が変わらないもの
 
-(format t "~%<p><b>問~a:</b>" *question-number*)
-(format t "<form id=\"quiz~a\" name=\"quiz~a\">~%" *question-number*  *question-number*)
-(format t "<input name=\"answer\" type=\"radio\" value=\"~a\"> ~a<br>~%" (increment-char-by-number *ans-value*))
-(format t "<br>~%")
-(format t "<input onclick=\"TrueOrFalse~a()\" type=\"button\" value=\"解答する\">~%" *question-number*)
-(format t "</form>~%")
-(format t "<p id=\"ans~a\">〔解答はここに表示されます〕</p>" *question-number*)
+(defparameter *header*
+  (concatenate 'string
+	       "[[include component:coltop show=▶ クイズ|hide=▲ 閉じる]]~%"
+	       "[[html]]~%"
+	       "<!DOCTYPE html>~%"
+	       "<html>~%"
+	       "<head>~%"
+	       "  <meta content=\"width=device-width ,initial-scale=1.0\" name=\"viewport\">~%"
+	       "  <style>~%"
+	       "  @import url (\"https://d3g0gp89917ko0.cloudfront.net/v--291054f06006/common--theme/base/css/style.css\");~%"
+	       "  @import url (\"https://scp-jp.wdfiles.com/local--code/component%3Atheme/2\");~%"
+	       "  </style>~%"
+	       "  <title>問答部門からの挑戦状</title>~%"
+	       "</head>~%"
+	       "<body>~%~%"))
 
-|#
+(defparameter *tail*
+  (concatenate 'string
+	       "</body>~%"
+	       "</html>~%"
+	       "[[/html]]~%"
+	       "[[include component:colend hide=▲ クイズを閉じる]]~%"))
+
+
+(defparameter *js-start* "<script type=\"text/javascript\">~%~%")
+
+(defparameter *js-end* "</script>~%~%")
 
 
 
-(defun maru-to-digit (char)
-  "丸数字を普通の数字に変換する"
-  (let ((maru-ichi-code 9312)
+
+
+;; <p><b>問1:</b> 「SCP-3801-JP - おっぱいのんで、ねんねしな」において、アルバートが飼育していたヨリックはどの動物でしょう？</p>
+;; <form id="quiz1" name="quiz1">
+     ;; <input name="answer" type="radio" value="a"> イエイヌ<br>
+     ;; <input name="answer" type="radio" value="b"> ラット<br>
+     ;; <input name="answer" type="radio" value="c"> ニワトリ<br>
+     ;; <input name="answer" type="radio" value="d"> キンギョ<br>
+  ;; <br>
+  ;; <input onclick="TrueOrFalse1()" type="button" value="解答する">
+;; </form>
+;; <p id="ans1">〔解答はここに表示されます〕</p>
+
+
+
+(defun circled->int (char)
+  ;; 丸数字を普通の数字に変換する
+  (let ((circled-1 (load-time-value (char-code #\①)))
+	(circled-20 (load-time-value (char-code #\⑳)))
 	(char-code (char-code char)))
-    (if (<= maru-ichi-code char-code (char-code #\⑳))
-	(- char-code 9311)
-      char)))
+    (assert (<= circled-1 char-code circled-20))
+    (- char-code 9311)))
 
-(defun-s question-title (stream)
-	 (*question-number* 'inc)
-	 (put "~%<p><b>問~a:</b>" *question-number*)
-	 (put "~a</p>~%" stream)
-	 (*questionp* t))
+(defun circled-num-p (char)
+  (let ((circled-1 (load-time-value (char-code #\①)))
+	(circled-20 (load-time-value (char-code #\⑳)))
+	(char-code (char-code char)))
+    (<= circled-1 char-code circled-20)))
 
-(defun-s answer-head ()
-	 (put "    <form id=\"quiz~a\" name=\"quiz~a\">~%" *question-number* *question-number*))
+(defun option-int-p (char)
+  (<= (char-code #\0) (char-code char) (char-code #\9)))
 
-(defun-s answer-option (content)
-	 (put "        <input name=\"answer\" type=\"radio\" value=\"~a\"> ~a<br>~%" (increment-char-by-number *ans-value*) content)
-	 (*ans-value* 'inc))
+(defun option-number-p (char)
+  (or (circled-num-p char)
+      (option-int-p char)))
 
-(defun answer-memory (number)
-  (push *question-number* *list*)
-  (push *ans-value* *list*)
-  (push (maru-to-digit number) *list*))
+(defun parse-option-number (str &key (start 0) end junk-allowed)
+  (unless junk-allowed (assert (not (find-if (complement #'option-number-p) str :start start :end end)) ()
+			       (simple-parse-error "junk in string ~S" str)))
+  (cond ((circled-num-p (char str start)) (values (circled->int (char str start)) 1))
+	(t (parse-integer str :start start :end end :junk-allowed junk-allowed))))
 
-(defun-s question-end ()
-	 (put "        <br>~%")
-	 (put "        <input onclick=\"TrueOrFalse~a()\" type=\"button\" value=\"解答する\">~%" *question-number*)
-	 (put "    </form>~%")
-	 (put "<p id=\"ans~a\">〔解答はここに表示されます〕</p>~%" *question-number*)
-	 (*questionp* nil)
-	 (*ans-value* 'res))
+(defun char-code-from-a (num)
+  ;; 1 = #\a, 2 = #\b
+  (assert (plusp num))
+  (code-char (+ num (1- (char-code #\a)))))
 
 
+;; -----------------------
+;;;; make-question-string
+;; -----------------------
+
+(defparameter *question-string*
+  (concatenate 'string
+	       "<p><b>問~0@*~a:</b> ~1@*~a</p>~%"
+	       "    <form id=\"quiz~0@*~a\" name=\"quiz~0@*~a\">~%"
+	       "~2@*~a"
+	       "        <br>~%"
+	       "        <input onclick=\"TrueOrFalse~0@*~a()\" type=\"button\" value=\"解答する\">~%"
+	       "    </form>~%"
+	       "<p id=\"ans~0@*~a\">〔解答はここに表示されます〕</p>~%~%"))
 
 
-(defun-s TrueOrFalse-head (q-number)
-	 (put "~%function TrueOrFalse~a() {~%" q-number))
-
-(defun-s TrueOrFalse-if (q-number i)
-	 (put "~a (quiz~a.answer.value == '~a') {~%"
-	      (if (= i 0)
-		  "    if"
-		"    } else if")
-	      q-number (increment-char-by-number i)))
-
-(defun-s TrueOrFalse-body (q-number a-number i)
-	 (put "        var myp = document.getElementById(\"ans~a\");~%" q-number)
-	 (put "        myp.innerHTML = \"~a\";~%" (if
-						      (= i (1- a-number))
-						      "正解です！"
-						    "不正解です。")))
-
-(defun-s TrueOrFalse-else-end (q-number)
-	 (put "    } else {~%")
-	 (put "        var myp = document.getElementById(\"ans~a\");~%" q-number)
-	 (put "        myp.innerHTML = \"~a問目の答えを選択してください。\";~%" q-number)
-	 (put "    }~%}~%"))
-  
+(defun make-question-option (option-number option)
+  (format nil "        <input name=\"answer\" type=\"radio\" value=\"~a\"> ~a<br>~%"
+	  (char-code-from-a option-number) option))
 
 
-
-
-(defun-s make (path)
-	 (setf *stdin-input* path)
-	 (put (head))
-	 (with-open-file (stream *stdin-input*)
-			 (loop
-			  (let ((data (read stream nil :eof)))
-			    (when (eq data :eof) (progn (*question-number* 'res) (return)))
-			    (if *questionp*
-				(case data
-				      (解答
-				       (progn (answer-memory (read-char stream))
-					      (put (question-end))))
-				      (t
-				       (put (answer-option (read-line stream)))))
-			      (case data
-				    (Q. (progn (put (question-title (read-line stream)))
-					       (put (answer-head))))))))
-			 (put (js-start))
-			 (let ((ans-list (reverse *list*)))
-			   (loop
-			    (if ans-list
-				(let ((q-number (the fixnum (pop ans-list)))
-				      (ans-value (the fixnum (pop ans-list)))
-				      (a-number (the fixnum (pop ans-list))))
-				  (declare (fixnum q-number ans-value a-number))
-				  (put (TrueOrFalse-head q-number))
-				  (loop for i from 0 below ans-value
-					do (put (TrueOrFalse-if q-number i))
-					(put (TrueOrFalse-body q-number a-number i)))
-				  (put (TrueOrFalse-else-end q-number)))
-			      (progn (setf *list* nil) (return)))))
-			 (put (js-end))
-			 (put (end))))
+(defun make-question-string (number body options &optional (stream nil))
+  ;; make-question-string number body options &optional stream
+  ;; number = a positive interger.
+  ;; body = a string.
+  ;; options = a list of strings.
+  (let ((option (apply #'concatenate 'string (loop :for i :from 1 :for opt :in options
+						   :collect (make-question-option i opt)))))
+    (format stream *question-string* number body option)))
 
 
 
-(defun save-with-new-name (original-path name-suffix new-extension content)
-  "元のファイル名に文字列を追加し、拡張子を変更してファイルを保存する関数"
-  (let* ((original-pathname (pathname original-path))
-	 (original-name (pathname-name original-pathname))
-	 (new-name (format nil "~a~a" original-name name-suffix))
-	 (new-pathname (make-pathname :name new-name
-				      :type new-extension
-				      :defaults original-pathname)))
-    (with-open-file (stream new-pathname :direction :output
-			    :if-exists :supersede)
-		    (write-string content stream))))
+;; ----------------------------
+;;;; make-true-or-false-string
+;; ----------------------------
+
+
+(defparameter *true-or-false-string*
+  (concatenate 'string
+	       "function TrueOrFalse~a() {~%"
+	       "~{~A~}~%"
+	       "}~%~%"))
+
+(defparameter *if-statement*
+  (concatenate 'string
+	       "    ~0@*~A (quiz~1@*~A.answer.value == '~2@*~A') {~%"
+	       "        var myp = document.getElementById(\"ans~1@*~A\");~%"
+	       "        myp.innerHTML = ~3@*~S;~%"
+	       "    } "))
+
+(defun %make-if-statements (if-or-else question-number option-number answerp)
+  (format nil *if-statement* (ecase if-or-else (:if "if") (:else "else") (:elseif "else if"))
+	  question-number (char-code-from-a option-number) (if answerp "正解です！" "不正解です。")))
+
+(defun make-if-statements (question-number ans-number option-length)
+  (assert (>= option-length ans-number))
+  (assert (>= option-length 2))
+  (loop :for i :from 1 :to option-length
+	:if (= i 1)
+	  :collect (%make-if-statements :if question-number 1 (= ans-number 1))
+	:else :if (< 1 i option-length)
+		:collect (%make-if-statements :elseif question-number i (= ans-number i))
+	:else :collect (%make-if-statements :else question-number option-length (= ans-number option-length))
+	      :and :do (loop-finish)))
+
+(defun make-true-or-false-string (question-number ans-number option-length &optional stream)
+  ;; make-true-or-false-string question-number ans-number option-length
+  ;; question-number = a positive integer.
+  ;; ans-number = a positive integer.
+  ;; option-length = a non-negative integer.
+  (let ((if-statements (make-if-statements question-number ans-number option-length)))
+    (format stream *true-or-false-string* question-number if-statements)))
+
+
+
+
+;; ----------------
+;;;; make-question
+;; ----------------
+
+;; Q. 「SCP-001-JP - アースリングス」において、SCP-001-JPを構成する大多数の物質はどの元素を主体としているでしょう？
+;; ① アルミニウム
+;; ② ケイ素
+;; ③ カルシウム
+;; ④ ゲルマニウム
+;; 解答 ②
+
+;; このような文字列をフォーマットしたい
+;; 行で区切り、先頭の文字列一致で確認していくか？
+
+(defstruct (question (:constructor %make-question))
+  question-number body options option-length ans-number)
+
+(defun skip-space (sequence &key (start 0))
+  (position-if (curry (complement #'char=) #\space) sequence :start start))
+
+(defun skip-brank-line (stream)
+  (loop :for str := (read-line stream)
+	:when (notevery (rcurry #'member '(#\space #\newline) :test #'char=) str)
+	  :return str))
+
+(defun make-question.body (stream &aux (it (skip-brank-line stream)))
+  (when (string-prefix-p "Q." it)
+    (subseq it (skip-space it :start 2))))
+
+(defun %make-question.options (string)
+  (multiple-value-bind (num pos) (parse-option-number string :junk-allowed t)
+    (when num (subseq string (skip-space string :start pos)))))
+
+(defun %make-question.answer (str)
+  (when (string-prefix-p "解答" str)
+    (parse-option-number str :start (skip-space str :start 2))))
+
+(defun make-question.options (stream)
+  (loop :for i :from 1
+	:for str := (skip-brank-line stream)
+	:if (%make-question.options str)
+	  :collect :it :into options
+	  :and :count t :into length
+	:else
+	  :return (when-let (ans (%make-question.answer str))
+		    (values options length ans))))
+
+(defun make-question (question-number stream &aux body options length ans)
+  (handler-case
+      (progn (setf body (make-question.body stream))
+	     (setf (values options length ans) (make-question.options stream))
+	     (%make-question :question-number question-number :body body :options options
+			     :option-length length :ans-number ans))
+    (end-of-file nil)))
+
+(defun %make-questions (stream)
+  (loop :for question-num :from 1
+	:when (make-question question-num stream)
+	  :collect :it
+	:else :do (loop-finish)))
+
+(defun make-questions (pathname)
+  (with-input-file (stream pathname)
+    (%make-questions stream)))
+
+(defun %make-new-pathname (pathname &optional number)
+  (let ((name (make-pathname :directory (pathname-directory pathname)
+			     :name (format nil "~A_formatted~@[-~A~]" (pathname-name pathname) number)
+			     :type "txt")))
+    (if (file-exists-p name)
+	(%make-new-pathname pathname (1+ (or number 0)))
+	name)))
+
+(defun make-new-pathname (pathname)
+  (%make-new-pathname pathname))
 
 (defun main ()
-  (let ((path (pathname (read-line))))
-    (save-with-new-name path "_formated" "txt" (format nil (make path))))
+  (let* ((pathname (parse-namestring (read-line)))
+	 (questions (make-questions pathname)))
+    (with-output-file (stream (make-new-pathname pathname)
+			      :if-does-not-exist :create)
+      (format stream *header*)
+      (loop :for question :in questions
+	    :do (with-slots (question-number body options) question
+		  (make-question-string question-number body options stream))
+	    :finally (terpri stream))
+      (loop :for question :in questions
+	    :initially (format stream *js-start*)
+	    :do (with-slots (question-number ans-number option-length) question
+		  (make-true-or-false-string question-number ans-number option-length stream))
+	    :finally (format stream *js-end*))
+      (format stream *tail*)))
   (quit))
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
