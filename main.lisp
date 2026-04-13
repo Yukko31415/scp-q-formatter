@@ -190,35 +190,33 @@
 	:when (notevery (rcurry #'member '(#\space #\newline) :test #'char=) str)
 	  :return str))
 
-(defun make-question.body (stream &aux (it (skip-brank-line stream)))
+(defun make-question-body (stream &aux (it (skip-brank-line stream)))
   (when (string-prefix-p "Q." it)
     (subseq it (skip-space it :start 2))))
 
-(defun %make-question.options (string)
+(defun %make-question-options (string)
   (multiple-value-bind (num pos) (parse-option-number string :junk-allowed t)
     (when num (subseq string (skip-space string :start pos)))))
 
-(defun %make-question.answer (str)
+(defun %make-question-answer (str)
   (when (string-prefix-p "解答" str)
     (parse-option-number str :start (skip-space str :start 2))))
 
-(defun make-question.options (stream)
+(defun make-question-options (stream)
   (loop :for i :from 1
 	:for str := (skip-brank-line stream)
-	:if (%make-question.options str)
+	:if (%make-question-options str)
 	  :collect :it :into options
 	  :and :count t :into length
 	:else
-	  :return (when-let (ans (%make-question.answer str))
+	  :return (when-let (ans (%make-question-answer str))
 		    (values options length ans))))
 
 (defun make-question (question-number stream &aux body options length ans)
-  (handler-case
-      (progn (setf body (make-question.body stream))
-	     (setf (values options length ans) (make-question.options stream))
-	     (%make-question :question-number question-number :body body :options options
-			     :option-length length :ans-number ans))
-    (end-of-file nil)))
+  (setf body (make-question-body stream))
+  (setf (values options length ans) (make-question-options stream))
+  (%make-question :question-number question-number :body body :options options
+		  :option-length length :ans-number ans))
 
 (defun %make-questions (stream)
   (loop :for question-num :from 1
