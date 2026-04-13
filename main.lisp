@@ -213,10 +213,12 @@
 		    (values options length ans))))
 
 (defun make-question (question-number stream &aux body options length ans)
-  (setf body (make-question-body stream))
-  (setf (values options length ans) (make-question-options stream))
-  (%make-question :question-number question-number :body body :options options
-		  :option-length length :ans-number ans))
+  (handler-case
+      (progn (setf body (make-question-body stream))
+	     (setf (values options length ans) (make-question-options stream))
+	     (%make-question :question-number question-number :body body :options options
+			     :option-length length :ans-number ans))
+    (end-of-file () nil)))
 
 (defun %make-questions (stream)
   (loop :for question-num :from 1
