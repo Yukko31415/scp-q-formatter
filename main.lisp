@@ -93,9 +93,9 @@
   (code-char (+ num (1- (char-code #\a)))))
 
 
-;; -----------------------
+;; ------------------------
 ;;;; make-question-string
-;; -----------------------
+;; ------------------------
 
 (defparameter *question-string*
   (concatenate 'string
@@ -124,9 +124,9 @@
 
 
 
-;; ----------------------------
+;; -----------------------------
 ;;;; make-true-or-false-string
-;; ----------------------------
+;; -----------------------------
 
 
 (defparameter *true-or-false-string*
@@ -168,9 +168,9 @@
 
 
 
-;; ----------------
+;; ------------------
 ;;;; make-questions
-;; ----------------
+;; ------------------
 
 ;; Q. 「SCP-001-JP - アースリングス」において、SCP-001-JPを構成する大多数の物質はどの元素を主体としているでしょう？
 ;; ① アルミニウム
@@ -232,9 +232,9 @@
 
 
 
-;; -------
+;; --------
 ;;;; main
-;; -------
+;; --------
 
 (defun %make-new-pathname (pathname &optional number)
   (let ((name (make-pathname :directory (pathname-directory pathname)
