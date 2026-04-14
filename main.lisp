@@ -1,7 +1,7 @@
 
 
 (uiop:define-package #:scp-q-formatter
-  (:mix #:cl #:uiop #:alexandria)
+  (:mix #:uiop #:cl #:alexandria)
   (:export #:main))
 
 (in-package #:scp-q-formatter)
