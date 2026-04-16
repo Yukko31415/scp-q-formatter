@@ -6,8 +6,7 @@
 	   #:invalid-question-sentence
 	   #:question-parse-time-error
 	   #:too-few-options
-	   #:unmatch-question-number
-	   #:unmatich-question-number)
+	   #:unmatch-question-number)
   (:export #:ensure-all))
 
 (in-package #:scp-q-formatter.error)
@@ -256,7 +255,7 @@
 (defun %make-question-options (question-num string)
   (multiple-value-bind (num pos) (parse-option-number string :junk-allowed t)
     (ensure-all (num 'invalid-question-sentence :sentence string)
-		((= num question-num) 'unmatich-question-number))
+		((= num question-num) 'unmatch-question-number))
     (subseq string (skip-space string :start pos))))
 
 (defun %make-question-answer (str)
