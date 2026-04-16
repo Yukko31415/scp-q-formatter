@@ -121,19 +121,17 @@
 ;; --------
 
 
-(defun circled->int (char)
-  ;; 丸数字を普通の数字に変換する
-  (let ((circled-1 (load-time-value (char-code #\①)))
-	(circled-20 (load-time-value (char-code #\⑳)))
-	(char-code (char-code char)))
-    (assert (<= circled-1 char-code circled-20))
-    (- char-code 9311)))
-
 (defun circled-num-p (char)
   (let ((circled-1 (load-time-value (char-code #\①)))
 	(circled-20 (load-time-value (char-code #\⑳)))
 	(char-code (char-code char)))
     (<= circled-1 char-code circled-20)))
+
+(defun circled->int (char)
+  ;; 丸数字を普通の数字に変換する
+  (let ((char-code (char-code char)))
+    (assert (circled-num-p char) () 'circleed-number-parse-error :char char)
+    (- char-code (load-time-value (char-code #\①)))))
 
 (defun option-int-p (char)
   (<= (char-code #\0) (char-code char) (char-code #\9)))
