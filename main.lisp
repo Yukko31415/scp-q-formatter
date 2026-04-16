@@ -141,8 +141,8 @@
       (option-int-p char)))
 
 (defun parse-option-number (str &key (start 0) end junk-allowed)
-  (unless junk-allowed (assert (not (find-if (complement #'option-number-p) str :start start :end end)) ()
-			       (simple-parse-error "junk in string ~S" str)))
+  (unless (or junk-allowed (not (find-if (complement #'option-number-p) str :start start :end end))) ()
+	  (simple-parse-error "junk in string ~S" str))
   (cond ((circled-num-p (char str start)) (values (circled->int (char str start)) 1))
 	(t (parse-integer str :start start :end end :junk-allowed junk-allowed))))
 
@@ -195,24 +195,24 @@
 	       "}~%~%"))
 
 (defparameter *if-statement*
-  (concatenate 'string
-	       "    ~0@*~A (quiz~1@*~A.answer.value == '~2@*~A') {~%"
-	       "        var myp = document.getElementById(\"ans~1@*~A\");~%"
-	       "        myp.innerHTML = ~3@*~S;~%"
-	       "    } "))
+   (concatenate 'string
+		"    ~0@*~A (quiz~1@*~A.answer.value == '~2@*~A') {~%"
+		"        var myp = document.getElementById(\"ans~1@*~A\");~%"
+		"        myp.innerHTML = ~3@*~S;~%"
+		"    } "))
 
 (defun %make-if-statements (if-or-else question-number option-number answerp)
-  (format nil *if-statement* (ecase if-or-else (:if "if") (:else "else") (:elseif "else if"))
+  (format nil *if-statement* (ecase if-or-else (:if "if") (:else "else") (:else-if "else if"))
 	  question-number (char-code-from-a option-number) (if answerp "正解です！" "不正解です。")))
 
 (defun make-if-statements (question-number ans-number option-length)
-  (assert (>= option-length ans-number))
-  (assert (>= option-length 2))
+  (ensure-all ((>= option-length ans-number) 'invalid-answer-number :answer-number ans-number)
+	      ((>= option-length 2) 'too-few-options))
   (loop :for i :from 1 :to option-length
 	:if (= i 1)
 	  :collect (%make-if-statements :if question-number 1 (= ans-number 1))
 	:else :if (< 1 i option-length)
-		:collect (%make-if-statements :elseif question-number i (= ans-number i))
+		:collect (%make-if-statements :else-if question-number i (= ans-number i))
 	:else :collect (%make-if-statements :else question-number option-length (= ans-number option-length))
 	      :and :do (loop-finish)))
 
@@ -250,23 +250,23 @@
 	  :return str))
 
 (defun make-question-body (stream &aux (it (skip-brank-line stream)))
-  (when (string-prefix-p "Q." it)
-    (subseq it (skip-space it :start 2))))
+  (unless (string-prefix-p "Q." it) (error 'invalid-question-sentence :sentence it))
+  (subseq it (skip-space it :start 2)))
 
-(defun %make-question-options (string)
+(defun %make-question-options (question-num string)
   (multiple-value-bind (num pos) (parse-option-number string :junk-allowed t)
-    (when num (subseq string (skip-space string :start pos)))))
+    (ensure-all (num 'invalid-question-sentence :sentence string)
+		((= num question-num) 'unmatich-question-number))
+    (subseq string (skip-space string :start pos))))
 
 (defun %make-question-answer (str)
-  (when (string-prefix-p "解答" str)
-    (parse-option-number str :start (skip-space str :start 2))))
+  (unless (string-prefix-p "解答" str) (error 'invalid-question-sentence :sentence str))
+  (parse-option-number str :start (skip-space str :start 2)))
 
-(defun make-question-options (stream)
-  (loop :for i :from 1
-	:for str := (skip-brank-line stream)
-	:if (%make-question-options str)
+(defun make-question-options (stream &aux (length 0))
+  (loop :for str := (skip-brank-line stream)
+	:if (progn (incf length) (%make-question-options length str))
 	  :collect :it :into options
-	  :and :count t :into length
 	:else
 	  :return (when-let (ans (%make-question-answer str))
 		    (values options length ans))))
