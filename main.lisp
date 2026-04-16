@@ -308,8 +308,8 @@
 
 (defun get-pathname-from-terminal ()
   (loop (handler-case
-	    (progn (print "ファイルパスを入力: ") (finish-output)
-		   (truename (parse-namestring (read-line))))
+	    (return (progn (format "~A" "ファイルパスを入力: ") (finish-output)
+		    (truename (parse-namestring (read-line)))))
 	  (error () (format t "~%エラーが発生しました。もう一度入力してください。~%")))))
 
 (defun main ()
