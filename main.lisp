@@ -130,7 +130,7 @@
   ;; 丸数字を普通の数字に変換する
   (let ((char-code (char-code char)))
     (assert (circled-num-p char) () 'circleed-number-parse-error :char char)
-    (- char-code (load-time-value (char-code #\①)))))
+    (- char-code (load-time-value (1- (char-code #\①))))))
 
 (defun option-int-p (char)
   (<= (char-code #\0) (char-code char) (char-code #\9)))
