@@ -1,7 +1,68 @@
 
+(uiop:define-package #:scp-q-formatter.error
+  (:mix #:uiop #:cl #:alexandria)
+  (:export #:circleed-number-parse-error
+	   #:invalid-answer-number
+	   #:invalid-question-sentence
+	   #:question-parse-time-error
+	   #:too-few-options
+	   #:unmatch-question-number
+	   #:unmatich-question-number)
+  (:export #:ensure-all))
+
+(in-package #:scp-q-formatter.error)
+
+
+
+
+(define-condition question-parse-time-error (error)
+  ((line :reader parse-error-line :initarg :line))
+  (:documentation "問題をパースした際に問題を通知するエラー"))
+
+
+
+
+(define-condition circleed-number-parse-error (error)
+  ((char :reader parse-error-char :initarg :char))
+  (:report (lambda (c s) (format s "~Aは丸数字ではありません。" (parse-error-char c))))
+  (:documentation "丸数字が正常にパースできなかった際に通知されるエラー"))
+
+(define-condition unmatch-question-number (error) ()
+  (:report (lambda (c s) (declare (ignore c)) (format s "選択肢番号が適切ではありません。")))
+  (:documentation "選択肢の数字が不一致の際に通知されるエラー"))
+
+(define-condition too-few-options (error) ()
+  (:report (lambda (c s) (declare (ignore c)) (format s "選択肢は必ず2つ以上必要です。")))
+  (:documentation "選択肢が1つだけしかない場合に通知されるエラー"))
+
+(define-condition invalid-answer-number (error)
+  ((answer-number :reader answer-number :initarg :answer-number))
+  (:report (lambda (c s) (format s "~A は無効な解答番号です。" (answer-number c))))
+  (:documentation "無効な解答選択肢があった場合に通知されるエラー")
+  ;; (>= 1 n max-question-number)
+  )
+
+(define-condition invalid-question-sentence (error)
+  ((sentence :reader question-sentence :initarg :sentence))
+  (:report (lambda (c s) (format s "\"~A\"は無効な文章です。" (question-sentence c))))
+  (:documentation "無効な問題文があった場合に通知されるエラー"))
+
+
+(defmacro ensure-all (&rest clauses)
+  "ensure-all {!clouse}* => {result}*
+   clause ::= (test-form datum &rest args)"
+  `(progn
+     ,@(loop for (test . error-args) in clauses
+             collect `(unless ,test
+                        (error ,@error-args)))))
+
+
+
+
+
 
 (uiop:define-package #:scp-q-formatter
-  (:mix #:uiop #:cl #:alexandria)
+  (:mix #:uiop #:cl #:alexandria #:scp-q-formatter.error)
   (:export #:main))
 
 (in-package #:scp-q-formatter)
