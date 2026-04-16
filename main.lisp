@@ -254,9 +254,9 @@
 
 (defun %make-question-options (question-num string)
   (multiple-value-bind (num pos) (parse-option-number string :junk-allowed t)
-    (ensure-all (num 'invalid-question-sentence :sentence string)
-		((= num question-num) 'unmatch-question-number))
-    (subseq string (skip-space string :start pos))))
+    (when num
+      (unless (= num question-num) (error 'unmatch-question-number))
+      (subseq string (skip-space string :start pos)))))
 
 (defun %make-question-answer (str)
   (unless (string-prefix-p "解答" str) (error 'invalid-question-sentence :sentence str))
