@@ -190,30 +190,36 @@
 (defparameter *true-or-false-string*
   (concatenate 'string
 	       "function TrueOrFalse~a() {~%"
-	       "~{~A~}~%"
+	       "    ~{~A~}~%"
 	       "}~%~%"))
 
 (defparameter *if-statement*
-   (concatenate 'string
-		"    ~0@*~A (quiz~1@*~A.answer.value == '~2@*~A') {~%"
-		"        var myp = document.getElementById(\"ans~1@*~A\");~%"
-		"        myp.innerHTML = ~3@*~S;~%"
-		"    } "))
+  (concatenate 'string
+	       "~0@*~A (quiz~1@*~A.answer.value == '~2@*~A') {~%"
+	       "        var myp = document.getElementById(\"ans~1@*~A\");~%"
+	       "        myp.innerHTML = ~3@*~S;~%"
+	       "    } "))
 
-(defun %make-if-statements (if-or-else question-number option-number answerp)
-  (format nil *if-statement* (ecase if-or-else (:if "if") (:else "else") (:else-if "else if"))
-	  question-number (char-code-from-a option-number) (if answerp "正解です！" "不正解です。")))
+(defparameter *if-statement/else*
+  (concatenate 'string
+	       "~0@*~A {~%"
+	       "        var myp = document.getElementById(\"ans~1@*~A\");~%"
+	       "        myp.innerHTML = ~2@*~S;~%"
+	       "    }"))
+
+(defun %make-if-statements (if-or-else question-number option-number return-string)
+  (ecase if-or-else
+    ((:if :else-if)
+     (format nil *if-statement* (ecase if-or-else (:if "if") (:else-if "else if"))
+	     question-number (if option-number (char-code-from-a option-number) "") return-string))
+    (:else (format nil *if-statement/else* "else" question-number return-string))))
 
 (defun make-if-statements (question-number ans-number option-length)
   (ensure-all ((>= option-length ans-number) 'invalid-answer-number :answer-number ans-number)
 	      ((>= option-length 2) 'too-few-options))
-  (loop :for i :from 1 :to option-length
-	:if (= i 1)
-	  :collect (%make-if-statements :if question-number 1 (= ans-number 1))
-	:else :if (< 1 i option-length)
-		:collect (%make-if-statements :else-if question-number i (= ans-number i))
-	:else :collect (%make-if-statements :else question-number option-length (= ans-number option-length))
-	      :and :do (loop-finish)))
+  (list (%make-if-statements :if question-number ans-number "正解です！")
+	(%make-if-statements :else-if question-number nil (format nil "~A問目の答えを選択してください" question-number))
+	(%make-if-statements :else question-number ans-number "不正解です。")))
 
 (defun make-true-or-false-string (question-number ans-number option-length &optional stream)
   ;; make-true-or-false-string question-number ans-number option-length
