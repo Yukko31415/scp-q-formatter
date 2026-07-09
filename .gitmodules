@@ -1,0 +1,3 @@
+[submodule "cl-scheme-like-syntax"]
+	path = cl-scheme-like-syntax
+	url = git@github.com:Yukko31415/cl-scheme-like-syntax.git
