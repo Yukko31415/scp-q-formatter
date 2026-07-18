@@ -282,7 +282,7 @@
 
 (defun make-question-options (stream &aux (length 0))
   (loop :for str := (skip-brank-line stream)
-	:if (progn (inc@ length) (%make-question-options length str))
+	:if (if-let (it (%make-question-options length str)) (inc@ length) it)
 	  :collect :it :into options
 	:else
 	  :return (when-let (ans (%make-question-answer str))
