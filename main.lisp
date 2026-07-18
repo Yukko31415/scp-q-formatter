@@ -1,13 +1,12 @@
 
 (uiop:define-package #:scp-q-formatter.error
-  (:mix #:uiop #:cl #:alexandria)
-  (:export #:circleed-number-parse-error
-	   #:invalid-answer-number
+  (:use #:cl-scheme-like-syntax)
+  (:mix #:cl-scheme-like-syntax #:uiop #:alexandria)
+  (:export #:invalid-answer-number
 	   #:invalid-question-sentence
 	   #:question-parse-time-error
 	   #:too-few-options
-	   #:unmatch-question-number)
-  (:export #:ensure-all))
+	   #:unmatch-question-number))
 
 (in-package #:scp-q-formatter.error)
 
@@ -20,11 +19,6 @@
 
 
 
-
-(define-condition circleed-number-parse-error (error)
-  ((char :reader parse-error-char :initarg :char))
-  (:report (lambda (c s) (format s "~Aは丸数字ではありません。" (parse-error-char c))))
-  (:documentation "丸数字が正常にパースできなかった際に通知されるエラー"))
 
 (define-condition unmatch-question-number (error) ()
   (:report (lambda (c s) (declare (ignore c)) (format s "選択肢番号が適切ではありません。")))
@@ -47,13 +41,6 @@
   (:documentation "無効な問題文があった場合に通知されるエラー"))
 
 
-(defmacro ensure-all (&rest clauses)
-  "ensure-all {!clouse}* => {result}*
-   clause ::= (test-form datum &rest args)"
-  `(progn
-     ,@(loop for (test . error-args) in clauses
-             collect `(unless ,test
-                        (error ,@error-args)))))
 
 
 
@@ -61,7 +48,8 @@
 
 
 (uiop:define-package #:scp-q-formatter
-  (:mix #:uiop #:cl #:alexandria #:scp-q-formatter.error)
+  (:use #:cl-scheme-like-syntax)
+  (:mix #:cl-scheme-like-syntax #:uiop #:alexandria #:scp-q-formatter.error)
   (:export #:main))
 
 (in-package #:scp-q-formatter)
@@ -115,40 +103,52 @@
 ;; <p id="ans1">〔解答はここに表示されます〕</p>
 
 
-;; --------
+;; ---------
 ;;;; utils
-;; --------
+;; ---------
 
 
-(defun circled-num-p (char)
-  (let ((circled-1 (load-time-value (char-code #\①)))
-	(circled-20 (load-time-value (char-code #\⑳)))
-	(char-code (char-code char)))
+(defun circled-num? (char)
+  (let ((circled-1 (load-time-value (char->code #\①)))
+	(circled-20 (load-time-value (char->code #\⑳)))
+	(char-code (char->code char)))
     (<= circled-1 char-code circled-20)))
+
+(defun option-number? (char)
+  (or (circled-num? char)
+      (char-numeric? char)))
+
+(deftype option-int ()
+  `(and character (satisfies char-numeric?)))
+
+(deftype circled-num ()
+  `(and character (satisfies circled-num?)))
+
+(deftype option-number ()
+  `(or circled-num option-int))
+
+
 
 (defun circled->int (char)
   ;; 丸数字を普通の数字に変換する
-  (let ((char-code (char-code char)))
-    (assert (circled-num-p char) () 'circleed-number-parse-error :char char)
-    (- char-code (load-time-value (1- (char-code #\①))))))
+  (declare (circled-num char))
+  (let ((char-code (char->code char)))
+    (- char-code (load-time-value (1- (char->code #\①))))))
 
-(defun option-int-p (char)
-  (<= (char-code #\0) (char-code char) (char-code #\9)))
-
-(defun option-number-p (char)
-  (or (circled-num-p char)
-      (option-int-p char)))
 
 (defun parse-option-number (str &key (start 0) end junk-allowed)
-  (unless (or junk-allowed (not (find-if (complement #'option-number-p) str :start start :end end))) ()
-	  (simple-parse-error "junk in string ~S" str))
-  (cond ((circled-num-p (char str start)) (values (circled->int (char str start)) 1))
-	(t (parse-integer str :start start :end end :junk-allowed junk-allowed))))
+  (unless (or junk-allowed (not (find-if (complement (cut #'type? <> 'option-number))
+				      str :start start :end end)))
+    (simple-parse-error "junk in string ~S" str))
+  (let ((circled-num? (type? (char str start) 'circled-num)))
+    (cond (circled-num? (values (circled->int (char str start)) (1+ start)))
+	  (else         (parse-integer str :start start :end end :junk-allowed junk-allowed)))))
 
-(defun char-code-from-a (num)
+(defun integer->alpha (num)
   ;; 1 = #\a, 2 = #\b
-  (assert (plusp num))
-  (code-char (+ num (1- (char-code #\a)))))
+  (declare ((integer 1) num))
+  (code->char (+ num (1- (char->code #\a)))))
+
 
 
 ;; ------------------------
@@ -156,19 +156,18 @@
 ;; ------------------------
 
 (defparameter *question-string*
-  (concatenate 'string
-	       "<p><b>問~0@*~a:</b> ~1@*~a</p>~%"
-	       "    <form id=\"quiz~0@*~a\" name=\"quiz~0@*~a\">~%"
-	       "~2@*~a"
-	       "        <br>~%"
-	       "        <input onclick=\"TrueOrFalse~0@*~a()\" type=\"button\" value=\"解答する\">~%"
-	       "    </form>~%"
-	       "<p id=\"ans~0@*~a\">〔解答はここに表示されます〕</p>~%~%"))
+  (string-append "<p><b>問~0@*~a:</b> ~1@*~a</p>~%"
+		 "    <form id=\"quiz~0@*~a\" name=\"quiz~0@*~a\">~%"
+		 "~2@*~a"
+		 "        <br>~%"
+		 "        <input onclick=\"TrueOrFalse~0@*~a()\" type=\"button\" value=\"解答する\">~%"
+		 "    </form>~%"
+		 "<p id=\"ans~0@*~a\">〔解答はここに表示されます〕</p>~%~%"))
 
 
 (defun make-question-option (option-number option)
   (format nil "        <input name=\"answer\" type=\"radio\" value=\"~a\"> ~a<br>~%"
-	  (char-code-from-a option-number) option))
+	  (integer->alpha option-number) option))
 
 
 (defun make-question-string (number body options &optional (stream nil))
@@ -182,54 +181,63 @@
 
 
 
+
+
 ;; -----------------------------
 ;;;; make-true-or-false-string
 ;; -----------------------------
 
 
 (defparameter *true-or-false-string*
-  (concatenate 'string
-	       "function TrueOrFalse~a() {~%"
-	       "    ~{~A~}~%"
-	       "}~%~%"))
+  (string-append "function TrueOrFalse~a() {~%"
+		 "    ~{~A~}~%"
+		 "}~%~%"))
 
 (defparameter *if-statement*
-  (concatenate 'string
-	       "~0@*~A (quiz~1@*~A.answer.value == '~2@*~A') {~%"
-	       "        var myp = document.getElementById(\"ans~1@*~A\");~%"
-	       "        myp.innerHTML = ~3@*~S;~%"
-	       "    } "))
+  (string-append "~0@*~A (quiz~1@*~A.answer.value == '~2@*~A') {~%"
+		 "        var myp = document.getElementById(\"ans~1@*~A\");~%"
+		 "        myp.innerHTML = ~3@*~S;~%"
+		 "    } "))
 
 (defparameter *if-statement/else*
-  (concatenate 'string
-	       "~0@*~A {~%"
-	       "        var myp = document.getElementById(\"ans~1@*~A\");~%"
-	       "        myp.innerHTML = ~2@*~S;~%"
-	       "    }"))
+  (string-append "~0@*~A {~%"
+		 "        var myp = document.getElementById(\"ans~1@*~A\");~%"
+		 "        myp.innerHTML = ~2@*~S;~%"
+		 "    }"))
+
 
 (defun %make-if-statements (if-or-else question-number option-number return-string)
   (ecase if-or-else
     ((:if :else-if)
      (format nil *if-statement* (ecase if-or-else (:if "if") (:else-if "else if"))
-	     question-number (if option-number (char-code-from-a option-number) "") return-string))
+	     question-number (if option-number (integer->alpha option-number) "") return-string))
     (:else (format nil *if-statement/else* "else" question-number return-string))))
 
+
 (defun make-if-statements (question-number ans-number option-length)
-  (ensure-all ((>= option-length ans-number) 'invalid-answer-number :answer-number ans-number)
-	      ((>= option-length 2) 'too-few-options))
-  (list (%make-if-statements :if question-number ans-number "正解です！")
-	(%make-if-statements :else-if question-number nil (format nil "~A問目の答えを選択してください" question-number))
-	(%make-if-statements :else question-number ans-number "不正解です。")))
+  (assert (<= 2 option-length) () 'too-few-options)
+  (assert (<= ans-number option-length) () 'invalid-answer-number :answer-number ans-number)
+  (loop :for num :from 1 :to (1+ option-length)
+	:if (= num 1)
+	  :collect (if (= num ans-number)
+		       (%make-if-statements :if question-number num "正解です！")
+		       (%make-if-statements :if question-number num "不正解です。")) :else
+	:if (<= num option-length)
+	  :collect (if (= num ans-number)
+		       (%make-if-statements :else-if question-number num "正解です！")
+		       (%make-if-statements :else-if question-number num "不正解です。"))
+	:else
+	  :collect (%make-if-statements :else question-number num
+					(string-append (number->string question-number)
+						       "問目の答えを選択してください"))))
 
 (defun make-true-or-false-string (question-number ans-number option-length &optional stream)
   ;; make-true-or-false-string question-number ans-number option-length
   ;; question-number = a positive integer.
   ;; ans-number = a positive integer.
   ;; option-length = a non-negative integer.
-  (let ((if-statements (make-if-statements question-number ans-number option-length)))
-    (format stream *true-or-false-string* question-number if-statements)))
-
-
+  (format stream *true-or-false-string* question-number
+	  (make-if-statements question-number ans-number option-length)))
 
 
 ;; ------------------
@@ -244,14 +252,18 @@
 ;; 解答 ②
 
 (defstruct (question (:constructor %make-question))
-  question-number body options option-length ans-number)
+  (question-number 0 :type integer)
+  (body "" :type string)
+  (options (list) :type list)
+  (option-length 0 :type integer)
+  (ans-number 0 :type integer))
 
 (defun skip-space (sequence &key (start 0))
-  (position-if (curry (complement #'char=) #\space) sequence :start start))
+  (position-if (complement #'char-whitespace?) sequence :start start))
 
 (defun skip-brank-line (stream)
   (loop :for str := (read-line stream)
-	:when (notevery (rcurry #'member '(#\space #\newline) :test #'char=) str)
+	:when (notevery #'char-whitespace? str)
 	  :return str))
 
 (defun make-question-body (stream &aux (it (skip-brank-line stream)))
@@ -259,7 +271,7 @@
   (subseq it (skip-space it :start 2)))
 
 (defun %make-question-options (question-num string)
-  (multiple-value-bind (num pos) (parse-option-number string :junk-allowed t)
+  (bind-with-values (num pos) (parse-option-number string :junk-allowed t)
     (when num
       (unless (= num question-num) (error 'unmatch-question-number))
       (subseq string (skip-space string :start pos)))))
@@ -270,7 +282,7 @@
 
 (defun make-question-options (stream &aux (length 0))
   (loop :for str := (skip-brank-line stream)
-	:if (progn (incf length) (%make-question-options length str))
+	:if (progn (inc@ length) (%make-question-options length str))
 	  :collect :it :into options
 	:else
 	  :return (when-let (ans (%make-question-answer str))
@@ -278,8 +290,8 @@
 
 (defun make-question (question-number stream &aux body options length ans)
   (handler-case
-      (progn (setf body (make-question-body stream))
-	     (setf (values options length ans) (make-question-options stream))
+      (progn (set@ body (make-question-body stream)
+		   (values options length ans) (make-question-options stream))
 	     (%make-question :question-number question-number :body body :options options
 			     :option-length length :ans-number ans))
     (end-of-file () nil)))
@@ -325,7 +337,7 @@
       (format stream "~A" *header*)
       (loop :for question :in questions
 	    :with initialp := t
-	    :do (if initialp (setf initialp nil) (format stream "<hr>~%~%"))
+	    :do (if initialp (set@ initialp nil) (format stream "<hr>~%~%"))
 		(with-slots (question-number body options) question
 		  (make-question-string question-number body options stream))
 	    :finally (terpri stream))
