@@ -12,11 +12,13 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-    
+
     runs-on: ${{ matrix.os }}
-    
+
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       # ========================================
       # 1. 各OSでSBCLを直接インストール
@@ -50,14 +52,11 @@ jobs:
       # ========================================
       - name: Build Executable
         shell: bash
+        working-directory: ${{ github.workspace }}
         run: |
-          # 1. Quicklispをロード
-          # 2. 自前プロジェクトをソースレジストリに追加
-          # 3. 依存関係をダウンロード (quickload)
-          # 4. ビルド (asdf:make)
           sbcl --non-interactive \
                --load ~/quicklisp/setup.lisp \
-               --eval '(asdf:initialize-source-registry (list :source-registry :inherit-configuration (list :tree (uiop:getcwd))))' \
+               --eval "(asdf:initialize-source-registry '(:source-registry :inherit-configuration (:tree (uiop:parse-native-namestring (uiop:getenv \"GITHUB_WORKSPACE\")))))" \
                --eval '(ql:quickload :scp-q-formatter)' \
                --eval '(asdf:make :scp-q-formatter)'
 
