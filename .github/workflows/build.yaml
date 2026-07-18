@@ -47,18 +47,21 @@ jobs:
                --load quicklisp.lisp \
                --eval '(quicklisp-quickstart:install)'
 
-      # ========================================
-      # 3. ビルド実行
-      # ========================================
-      - name: Build Executable
-        shell: bash
-        working-directory: ${{ github.workspace }}
-        run: |
-          sbcl --non-interactive \
-               --load ~/quicklisp/setup.lisp \
-               --eval "(asdf:initialize-source-registry '(:source-registry :inherit-configuration (:tree (uiop:parse-native-namestring (uiop:getenv \"GITHUB_WORKSPACE\")))))" \
-               --eval '(ql:quickload :scp-q-formatter)' \
-               --eval '(asdf:make :scp-q-formatter)'
+     # ========================================
+     # 3. ビルド実行
+     # ========================================
+     - name: Build Executable
+       shell: bash
+       working-directory: ${{ github.workspace }}
+       run: |
+         sbcl --non-interactive \
+              --load ~/quicklisp/setup.lisp \
+              --eval "(asdf:initialize-source-registry
+                        (list :source-registry
+                              :inherit-configuration
+                              (list :tree (uiop:parse-native-namestring (uiop:getenv \"GITHUB_WORKSPACE\")))))" \
+              --eval '(ql:quickload :scp-q-formatter)' \
+              --eval '(asdf:make :scp-q-formatter)'
 
       # ========================================
       # 4. アーティファクトの回収
