@@ -280,10 +280,11 @@
   (unless (string-prefix-p "解答" str) (error 'invalid-question-sentence :sentence str))
   (parse-option-number str :start (skip-space str :start 2)))
 
-(defun make-question-options (stream &aux (length 1))
+(defun make-question-options (stream &aux (length 0))
   (loop :for str := (skip-brank-line stream)
-	:if (if-let (it (%make-question-options length str)) (inc@ length) it)
+	:if (%make-question-options (1+ length) str)
 	  :collect :it :into options
+	  :and :do (inc@ length)
 	:else
 	  :return (when-let (ans (%make-question-answer str))
 		    (values options length ans))))
