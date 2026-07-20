@@ -182,7 +182,6 @@
 
 
 
-
 ;; -----------------------------
 ;;;; make-true-or-false-string
 ;; -----------------------------
@@ -253,10 +252,10 @@
 
 (defstruct (question (:constructor %make-question))
   (question-number 0 :type integer)
-  (body "" :type string)
-  (options (list) :type list)
-  (option-length 0 :type integer)
-  (ans-number 0 :type integer))
+  (body ""           :type string)
+  (options (list)    :type list)
+  (option-length 0   :type integer)
+  (ans-number 0      :type integer))
 
 (defun skip-space (sequence &key (start 0))
   (position-if (complement #'char-whitespace?) sequence :start start))
