@@ -21,7 +21,7 @@ jobs:
           submodules: recursive
 
       # ========================================
-      # 1. 各OSでSBCLを直接インストール
+      # 1. 各OSでSBCLをインストール
       # ========================================
       - name: Install SBCL
         if: runner.os == 'Linux'
@@ -37,30 +37,67 @@ jobs:
         run: choco install -y sbcl
 
       # ========================================
-      # 2. Quicklisp のインストール (依存解決用)
+      # 2. ocicl のインストール
       # ========================================
-      - name: Install Quicklisp
+      # Linux: aptリポジトリからインストール
+      - name: Install ocicl (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          curl -fsSL https://ocicl.github.io/ocicl/deb-repo/ocicl-archive-keyring.gpg \
+            | sudo tee /usr/share/keyrings/ocicl-archive-keyring.asc > /dev/null
+          echo "deb [signed-by=/usr/share/keyrings/ocicl-archive-keyring.asc] https://ocicl.github.io/ocicl/deb-repo stable main" \
+            | sudo tee /etc/apt/sources.list.d/ocicl.list
+          sudo apt update
+          sudo apt install -y ocicl
+          ocicl setup
+
+      # macOS: Homebrewからインストール
+      - name: Install ocicl (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install ocicl
+          ocicl setup
+
+      # Windows: ソースからビルド
+      # ociclのバイナリは %UserProfile%\AppData\Local\ocicl\ に配置される
+      - name: Install ocicl (Windows)
+        if: runner.os == 'Windows'
         shell: bash
         run: |
-          curl -O https://beta.quicklisp.org/quicklisp.lisp
-          sbcl --non-interactive \
-               --load quicklisp.lisp \
-               --eval '(quicklisp-quickstart:install)'
+          git clone https://github.com/ocicl/ocicl.git /tmp/ocicl
+          cd /tmp/ocicl
+          sbcl --load setup.lisp
+          # PATHにociclバイナリのディレクトリを追加
+          echo "$USERPROFILE/AppData/Local/ocicl" >> "$GITHUB_PATH"
+          ocicl setup
 
       # ========================================
-      # 3. ビルド実行
+      # 3. 依存関係のインストールとビルド
       # ========================================
-      - name: Build Executable
+      - name: Install Dependencies and Build Executable
         shell: bash
         working-directory: ${{ github.workspace }}
+        env:
+          OCICL_LOCAL_ONLY: '1'
         run: |
+          # ocicl.csvに基づいて依存システムをプロジェクトローカルにダウンロード
+          ocicl install
+
+          # SBCL起動ファイルにocicl-runtimeとソースレジストリの設定を書き込み
+          cat > ~/.sbclrc << 'EOF'
+          #-ocicl
+          (when (probe-file #P"/usr/local/share/ocicl/ocicl-runtime.lisp")
+            (load #P"/usr/local/share/ocicl/ocicl-runtime.lisp"))
+          (when (probe-file (merge-pathnames ".local/share/ocicl/ocicl-runtime.lisp" (user-homedir-pathname)))
+            (load (merge-pathnames ".local/share/ocicl/ocicl-runtime.lisp" (user-homedir-pathname))))
+          (asdf:initialize-source-registry
+            (list :source-registry
+                  (list :directory (uiop:getcwd))
+                  :inherit-configuration))
+          EOF
+
           sbcl --non-interactive \
-               --load ~/quicklisp/setup.lisp \
-               --eval "(asdf:initialize-source-registry
-                         (list :source-registry
-                               :inherit-configuration
-                               (list :tree (uiop:parse-native-namestring (uiop:getenv \"GITHUB_WORKSPACE\")))))" \
-               --eval '(ql:quickload :scp-q-formatter)' \
+               --eval '(asdf:load-system :scp-q-formatter)' \
                --eval '(asdf:make :scp-q-formatter)'
 
       # ========================================
