@@ -90,13 +90,14 @@ jobs:
             (load #P"/usr/local/share/ocicl/ocicl-runtime.lisp"))
           (when (probe-file (merge-pathnames ".local/share/ocicl/ocicl-runtime.lisp" (user-homedir-pathname)))
             (load (merge-pathnames ".local/share/ocicl/ocicl-runtime.lisp" (user-homedir-pathname))))
-          (asdf:initialize-source-registry
-                        (list :source-registry
-                              :inherit-configuration
-                              (list :tree (uiop:parse-native-namestring (uiop:getenv \"GITHUB_WORKSPACE\")))))
+
           EOF
 
           sbcl --non-interactive \
+	       --eval '(asdf:initialize-source-registry
+                        (list :source-registry
+                              :inherit-configuration
+                              (list :tree (uiop:parse-native-namestring (uiop:getenv \"GITHUB_WORKSPACE\")))))' \
                --eval '(asdf:load-system :scp-q-formatter)' \
                --eval '(asdf:make :scp-q-formatter)'
 
