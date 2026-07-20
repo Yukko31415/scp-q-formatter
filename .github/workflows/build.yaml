@@ -93,12 +93,12 @@ jobs:
 
           EOF
 
+
           sbcl --non-interactive \
-	       --eval '(asdf:initialize-source-registry
-                        (list :source-registry
-                              :inherit-configuration
-                              (list :tree (uiop:parse-native-namestring (uiop:getenv \"GITHUB_WORKSPACE\")))))' \
-               --eval '(asdf:load-system :scp-q-formatter)' \
+               --eval "(asdf:initialize-source-registry
+                         (list :source-registry
+                               :inherit-configuration
+                               (list :tree (uiop:parse-native-namestring (uiop:getenv \"GITHUB_WORKSPACE\")))))" \
                --eval '(asdf:make :scp-q-formatter)'
 
       # ========================================
