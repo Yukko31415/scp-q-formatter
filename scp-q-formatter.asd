@@ -1,7 +1,7 @@
 
 
 (asdf:defsystem #:scp-q-formatter
-  :version "0.7.4"
+  :version "0.7.5"
   :author "Yukko"
   :license "CC0"
   :depends-on ("alexandria" "cl-scheme-like-syntax")
