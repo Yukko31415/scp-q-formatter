@@ -56,6 +56,9 @@ jobs:
           brew install ocicl
           ocicl setup
 
+      # Windows: sbcl --load setup.lisp で ocicl.exe をビルド
+      # GITHUB_PATH は次ステップで反映されるが、WindowsではUnix形式パスが
+      # 正しく解釈されない問題があるため、後続ステップではフルパスで呼ぶ
       - name: Install ocicl (Windows)
         if: runner.os == 'Windows'
         shell: bash
@@ -64,11 +67,10 @@ jobs:
           cd /tmp/ocicl
           sbcl --load setup.lisp
 
-          OCICL_BIN_DIR="/c/Users/runneradmin/AppData/Local/ocicl"
-          export PATH="$PATH:$OCICL_BIN_DIR"
-
-          echo "$OCICL_BIN_DIR" >> "$GITHUB_PATH"
-
+          # 同一ステップ内でocicl setupを実行
+          # ocicl.exe は ~/AppData/Local/ocicl/ に生成される
+          OCICL_BIN="/c/Users/runneradmin/AppData/Local/ocicl/ocicl.exe"
+          "$OCICL_BIN" setup
 
       # ========================================
       # 3. 依存関係のインストールとビルド
@@ -81,7 +83,14 @@ jobs:
           OCICL_LOCAL_ONLY: '1'
         run: |
           # ocicl.csv に基づいて依存システムをプロジェクトローカルにダウンロード
-          ocicl install
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            # Windowsではフルパスで呼ぶ
+            OCICL_CMD="/c/Users/runneradmin/AppData/Local/ocicl/ocicl.exe"
+          else
+            OCICL_CMD="ocicl"
+          fi
+
+          "$OCICL_CMD" install
 
           cat > ~/.sbclrc << 'EOF'
           #-ocicl
@@ -97,9 +106,9 @@ jobs:
                                    (user-homedir-pathname))))
           EOF
 
-
+          # CL_SOURCE_REGISTRY は使わず、--eval で source-registry を初期化する。
           # :tree を :inherit-configuration の前に置くことで、
-          # ローカルのシステムを優先的に検索させる。
+          # ローカルのシステム（submodule含む）を優先的に検索させる。
           sbcl --non-interactive \
                --eval "(asdf:initialize-source-registry
                          (list :source-registry
