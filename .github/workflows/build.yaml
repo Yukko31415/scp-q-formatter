@@ -23,7 +23,7 @@ jobs:
       # ========================================
       # 1. 各OSでSBCLをインストール
       # ========================================
-      - name: Install SBCL
+      - name: Install SBCL (Linux)
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y sbcl
 
@@ -39,7 +39,6 @@ jobs:
       # ========================================
       # 2. ocicl のインストール
       # ========================================
-      # Linux: aptリポジトリからインストール
       - name: Install ocicl (Linux)
         if: runner.os == 'Linux'
         run: |
@@ -49,17 +48,14 @@ jobs:
             | sudo tee /etc/apt/sources.list.d/ocicl.list
           sudo apt update
           sudo apt install -y ocicl
-          ocicl setup
+          yes | ocicl setup
 
-      # macOS: Homebrewからインストール
       - name: Install ocicl (macOS)
         if: runner.os == 'macOS'
         run: |
           brew install ocicl
-          ocicl setup
+          yes | ocicl setup
 
-      # Windows: ソースからビルド
-      # ociclのバイナリは %UserProfile%\AppData\Local\ocicl\ に配置される
       - name: Install ocicl (Windows)
         if: runner.os == 'Windows'
         shell: bash
@@ -67,9 +63,9 @@ jobs:
           git clone https://github.com/ocicl/ocicl.git /tmp/ocicl
           cd /tmp/ocicl
           sbcl --load setup.lisp
-          # PATHにociclバイナリのディレクトリを追加
+          # ociclバイナリのディレクトリをPATHに追加
           echo "$USERPROFILE/AppData/Local/ocicl" >> "$GITHUB_PATH"
-          ocicl setup
+          yes | ocicl setup
 
       # ========================================
       # 3. 依存関係のインストールとビルド
@@ -78,23 +74,16 @@ jobs:
         shell: bash
         working-directory: ${{ github.workspace }}
         env:
+          # プロジェクトローカルのみを使用し、グローバルシステムを無視
           OCICL_LOCAL_ONLY: '1'
-	  CL_SOURCE_REGISTRY: '${{ github.workspace }}//'_
+          # 末尾の // で :tree (再帰検索) を指定
+          # submodule 配下の .asd も発見される
+          CL_SOURCE_REGISTRY: '${{ github.workspace }}//'
         run: |
-          # ocicl.csvに基づいて依存システムをプロジェクトローカルにダウンロード
+          # ocicl.csv に基づいて依存システムをプロジェクトローカルにダウンロード
           ocicl install
 
-          # SBCL起動ファイルにocicl-runtimeとソースレジストリの設定を書き込み
-          cat > ~/.sbclrc << 'EOF'
-          #-ocicl
-          (when (probe-file #P"/usr/local/share/ocicl/ocicl-runtime.lisp")
-            (load #P"/usr/local/share/ocicl/ocicl-runtime.lisp"))
-          (when (probe-file (merge-pathnames ".local/share/ocicl/ocicl-runtime.lisp" (user-homedir-pathname)))
-            (load (merge-pathnames ".local/share/ocicl/ocicl-runtime.lisp" (user-homedir-pathname))))
-
-          EOF
-
-
+          # CL_SOURCE_REGISTRY が設定済みなので --eval での初期化は不要
           sbcl --non-interactive \
                --eval '(asdf:make :scp-q-formatter)'
 
