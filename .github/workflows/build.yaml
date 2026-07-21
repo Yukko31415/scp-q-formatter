@@ -83,6 +83,21 @@ jobs:
           # ocicl.csv に基づいて依存システムをプロジェクトローカルにダウンロード
           ocicl install
 
+          cat > ~/.sbclrc << 'EOF'
+          #-ocicl
+          (when (probe-file #P"/usr/local/share/ocicl/ocicl-runtime.lisp")
+            (load #P"/usr/local/share/ocicl/ocicl-runtime.lisp"))
+          (when (probe-file (merge-pathnames ".local/share/ocicl/ocicl-runtime.lisp"
+                                            (user-homedir-pathname)))
+            (load (merge-pathnames ".local/share/ocicl/ocicl-runtime.lisp"
+                                   (user-homedir-pathname))))
+          (when (probe-file (merge-pathnames "AppData/Local/ocicl/ocicl-runtime.lisp"
+                                            (user-homedir-pathname)))
+            (load (merge-pathnames "AppData/Local/ocicl/ocicl-runtime.lisp"
+                                   (user-homedir-pathname))))
+          EOF
+
+
           # :tree を :inherit-configuration の前に置くことで、
           # ローカルのシステムを優先的に検索させる。
           sbcl --non-interactive \
