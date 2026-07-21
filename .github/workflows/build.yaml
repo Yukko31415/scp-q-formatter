@@ -39,6 +39,7 @@ jobs:
       # ========================================
       # 2. ocicl のインストール
       # ========================================
+      # Linux: aptリポジトリからインストール
       - name: Install ocicl (Linux)
         if: runner.os == 'Linux'
         run: |
@@ -50,12 +51,15 @@ jobs:
           sudo apt install -y ocicl
           ocicl setup
 
+      # macOS: Homebrewからインストール
       - name: Install ocicl (macOS)
         if: runner.os == 'macOS'
         run: |
           brew install ocicl
           ocicl setup
 
+      # Windows: ソースからビルド
+      # ociclのバイナリは %UserProfile%\AppData\Local\ocicl\ に配置される
       - name: Install ocicl (Windows)
         if: runner.os == 'Windows'
         shell: bash
@@ -63,7 +67,7 @@ jobs:
           git clone https://github.com/ocicl/ocicl.git /tmp/ocicl
           cd /tmp/ocicl
           sbcl --load setup.lisp
-          # ociclバイナリのディレクトリをPATHに追加
+          # PATHにociclバイナリのディレクトリを追加
           echo "$USERPROFILE/AppData/Local/ocicl" >> "$GITHUB_PATH"
           ocicl setup
 
