@@ -48,13 +48,13 @@ jobs:
             | sudo tee /etc/apt/sources.list.d/ocicl.list
           sudo apt update
           sudo apt install -y ocicl
-          yes | ocicl setup
+          ocicl setup
 
       - name: Install ocicl (macOS)
         if: runner.os == 'macOS'
         run: |
           brew install ocicl
-          yes | ocicl setup
+          ocicl setup
 
       - name: Install ocicl (Windows)
         if: runner.os == 'Windows'
@@ -65,7 +65,7 @@ jobs:
           sbcl --load setup.lisp
           # ociclバイナリのディレクトリをPATHに追加
           echo "$USERPROFILE/AppData/Local/ocicl" >> "$GITHUB_PATH"
-          yes | ocicl setup
+          ocicl setup
 
       # ========================================
       # 3. 依存関係のインストールとビルド
