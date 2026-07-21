@@ -65,7 +65,6 @@ jobs:
           sbcl --load setup.lisp
           # ociclバイナリのディレクトリをPATHに追加
           echo "$USERPROFILE/AppData/Local/ocicl" >> "$GITHUB_PATH"
-          ocicl setup
 
       # ========================================
       # 3. 依存関係のインストールとビルド
