@@ -56,9 +56,6 @@ jobs:
           brew install ocicl
           ocicl setup
 
-      # Windows: sbcl --load setup.lisp で ocicl.exe をビルド
-      # GITHUB_PATH は次ステップで反映されるが、WindowsではUnix形式パスが
-      # 正しく解釈されない問題があるため、後続ステップではフルパスで呼ぶ
       - name: Install ocicl (Windows)
         if: runner.os == 'Windows'
         shell: bash
@@ -66,6 +63,9 @@ jobs:
           git clone https://github.com/ocicl/ocicl.git /tmp/ocicl
           cd /tmp/ocicl
           sbcl --load setup.lisp
+
+          # GITHUB_PATH にWindows形式パスを書き込む
+          echo "C:\Users\runneradmin\AppData\Local\Temp\ocicl" >> "$GITHUB_PATH"
 
       # ========================================
       # 3. 依存関係のインストールとビルド
@@ -77,15 +77,7 @@ jobs:
           # プロジェクトローカルのみを使用し、グローバルシステムを無視
           OCICL_LOCAL_ONLY: '1'
         run: |
-          # ocicl.csv に基づいて依存システムをプロジェクトローカルにダウンロード
-          if [ "$RUNNER_OS" = "Windows" ]; then
-            # Windowsではフルパスで呼ぶ
-            OCICL_CMD="C:/Users/runneradmin/AppData/Local/ocicl/ocicl.exe"
-          else
-            OCICL_CMD="ocicl"
-          fi
-
-          "$OCICL_CMD" install
+          ocicl install
 
           # ~/.sbclrc を作成し、ocicl-runtime をロードする設定を書き込む
           # 3つのOSのocicl-runtime配置場所をすべてカバー
