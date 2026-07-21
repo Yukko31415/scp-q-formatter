@@ -79,6 +79,7 @@ jobs:
         working-directory: ${{ github.workspace }}
         env:
           OCICL_LOCAL_ONLY: '1'
+	  CL_SOURCE_REGISTRY: '${{ github.workspace }}//'_
         run: |
           # ocicl.csvに基づいて依存システムをプロジェクトローカルにダウンロード
           ocicl install
@@ -95,10 +96,6 @@ jobs:
 
 
           sbcl --non-interactive \
-               --eval "(asdf:initialize-source-registry
-                         (list :source-registry
-                               :inherit-configuration
-                               (list :tree (uiop:parse-native-namestring (uiop:getenv \"GITHUB_WORKSPACE\")))))" \
                --eval '(asdf:make :scp-q-formatter)'
 
       # ========================================
