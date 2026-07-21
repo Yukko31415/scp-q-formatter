@@ -67,11 +67,6 @@ jobs:
           cd /tmp/ocicl
           sbcl --load setup.lisp
 
-          # 同一ステップ内でocicl setupを実行
-          # ocicl.exe は ~/AppData/Local/ocicl/ に生成される
-          OCICL_BIN="/c/Users/runneradmin/AppData/Local/ocicl/ocicl.exe"
-          "$OCICL_BIN" setup
-
       # ========================================
       # 3. 依存関係のインストールとビルド
       # ========================================
@@ -85,7 +80,7 @@ jobs:
           # ocicl.csv に基づいて依存システムをプロジェクトローカルにダウンロード
           if [ "$RUNNER_OS" = "Windows" ]; then
             # Windowsではフルパスで呼ぶ
-            OCICL_CMD="/c/Users/runneradmin/AppData/Local/ocicl/ocicl.exe"
+            OCICL_CMD="C:/Users/runneradmin/AppData/Local/ocicl/ocicl.exe"
           else
             OCICL_CMD="ocicl"
           fi
@@ -94,17 +89,23 @@ jobs:
 
           cat > ~/.sbclrc << 'EOF'
           #-ocicl
-          (when (probe-file #P"/usr/local/share/ocicl/ocicl-runtime.lisp")
-            (load #P"/usr/local/share/ocicl/ocicl-runtime.lisp"))
-          (when (probe-file (merge-pathnames ".local/share/ocicl/ocicl-runtime.lisp"
-                                            (user-homedir-pathname)))
-            (load (merge-pathnames ".local/share/ocicl/ocicl-runtime.lisp"
-                                   (user-homedir-pathname))))
-          (when (probe-file (merge-pathnames "AppData/Local/ocicl/ocicl-runtime.lisp"
-                                            (user-homedir-pathname)))
-            (load (merge-pathnames "AppData/Local/ocicl/ocicl-runtime.lisp"
-                                   (user-homedir-pathname))))
-          EOF
+
+	  (when (probe-file #P"C:/Users/runneradmin/AppData/Local/ocicl/ocicl-runtime.lisp")
+	  	(load #P"C:/Users/runneradmin/AppData/Local/ocicl/ocicl-runtime.lisp"))
+	  (asdf:initialize-source-registry
+		(list :source-registry (list :directory (uiop:getcwd)) :inherit-configuration))
+
+	  (when (probe-file #P"/Users/runner/.local/share/ocicl/ocicl-runtime.lisp")
+	  	(load #P"/Users/runner/.local/share/ocicl/ocicl-runtime.lisp"))
+	  (asdf:initialize-source-registry
+		(list :source-registry (list :directory (uiop:getcwd)) :inherit-configuration))
+
+	  (when (probe-file #P"/home/runner/.local/share/ocicl/ocicl-runtime.lisp")
+	  	(load #P"/home/runner/.local/share/ocicl/ocicl-runtime.lisp"))
+	  (asdf:initialize-source-registry
+		(list :source-registry (list :directory (uiop:getcwd)) :inherit-configuration))
+
+	  EOF
 
           # CL_SOURCE_REGISTRY は使わず、--eval で source-registry を初期化する。
           # :tree を :inherit-configuration の前に置くことで、
