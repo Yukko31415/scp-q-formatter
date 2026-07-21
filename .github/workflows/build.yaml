@@ -39,7 +39,6 @@ jobs:
       # ========================================
       # 2. ocicl のインストール
       # ========================================
-      # Linux: aptリポジトリからインストール
       - name: Install ocicl (Linux)
         if: runner.os == 'Linux'
         run: |
@@ -51,15 +50,12 @@ jobs:
           sudo apt install -y ocicl
           ocicl setup
 
-      # macOS: Homebrewからインストール
       - name: Install ocicl (macOS)
         if: runner.os == 'macOS'
         run: |
           brew install ocicl
           ocicl setup
 
-      # Windows: ソースからビルド
-      # ociclのバイナリは %UserProfile%\AppData\Local\ocicl\ に配置される
       - name: Install ocicl (Windows)
         if: runner.os == 'Windows'
         shell: bash
@@ -67,7 +63,7 @@ jobs:
           git clone https://github.com/ocicl/ocicl.git /tmp/ocicl
           cd /tmp/ocicl
           sbcl --load setup.lisp
-          # PATHにociclバイナリのディレクトリを追加
+          # ociclバイナリのディレクトリをPATHに追加
           echo "$USERPROFILE/AppData/Local/ocicl" >> "$GITHUB_PATH"
           ocicl setup
 
@@ -80,15 +76,38 @@ jobs:
         env:
           # プロジェクトローカルのみを使用し、グローバルシステムを無視
           OCICL_LOCAL_ONLY: '1'
-          # 末尾の // で :tree (再帰検索) を指定
-          # submodule 配下の .asd も発見される
-          CL_SOURCE_REGISTRY: '${{ github.workspace }}//'
         run: |
           # ocicl.csv に基づいて依存システムをプロジェクトローカルにダウンロード
           ocicl install
 
-          # CL_SOURCE_REGISTRY が設定済みなので --eval での初期化は不要
+          # ocicl setup は .sbclrc に追加すべきコードを出力するだけなので、
+          # 手動で .sbclrc を作成する。
+          # ocicl-runtime のパスはOSによって異なるため複数パスを probe-file でチェック。
+          # また、ワークスペースを :tree として source-registry に追加し、
+          # submodule 配下の .asd も再帰的に発見できるようにする。
+          cat > ~/.sbclrc << 'EOF'
+          #-ocicl
+          (when (probe-file #P"/usr/local/share/ocicl/ocicl-runtime.lisp")
+            (load #P"/usr/local/share/ocicl/ocicl-runtime.lisp"))
+          (when (probe-file (merge-pathnames ".local/share/ocicl/ocicl-runtime.lisp"
+                                            (user-homedir-pathname)))
+            (load (merge-pathnames ".local/share/ocicl/ocicl-runtime.lisp"
+                                   (user-homedir-pathname))))
+          (when (probe-file (merge-pathnames "AppData/Local/ocicl/ocicl-runtime.lisp"
+                                            (user-homedir-pathname)))
+            (load (merge-pathnames "AppData/Local/ocicl/ocicl-runtime.lisp"
+                                   (user-homedir-pathname))))
+          EOF
+
+          # CL_SOURCE_REGISTRY は使わず、--eval で source-registry を初期化する。
+          # :tree を :inherit-configuration の前に置くことで、
+          # ローカルのシステムを優先的に検索させる。
           sbcl --non-interactive \
+               --eval "(asdf:initialize-source-registry
+                         (list :source-registry
+                               (list :tree (uiop:parse-native-namestring
+                                             (uiop:getenv \"GITHUB_WORKSPACE\")))
+                               :inherit-configuration))" \
                --eval '(asdf:make :scp-q-formatter)'
 
       # ========================================
