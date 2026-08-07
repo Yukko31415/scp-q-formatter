@@ -74,13 +74,11 @@ jobs:
         shell: bash
         working-directory: ${{ github.workspace }}
         env:
-          # プロジェクトローカルのみを使用し、グローバルシステムを無視
           OCICL_LOCAL_ONLY: '1'
         run: |
           ocicl install
 
-          # ~/.sbclrc を作成し、ocicl-runtime をロードする設定を書き込む
-          # 3つのOSのocicl-runtime配置場所をすべてカバー
+          # ocicl-runtime をロードする設定を書き込む
           cat > ~/.sbclrc << 'EOF'
           #-ocicl
           (when (probe-file #P"/usr/local/share/ocicl/ocicl-runtime.lisp")
@@ -95,9 +93,6 @@ jobs:
                                    (user-homedir-pathname))))
           EOF
 
-          # CL_SOURCE_REGISTRY は使わず、--eval で source-registry を初期化する。
-          # :tree を :inherit-configuration の前に置くことで、
-          # ローカルのシステム（submodule含む）を優先的に検索させる。
           sbcl --non-interactive \
                --eval "(asdf:initialize-source-registry
                          (list :source-registry
