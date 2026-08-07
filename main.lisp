@@ -158,7 +158,7 @@
 (defparameter *question-string*
   (string-append "<p><b>問~0@*~a:</b> ~1@*~a</p>~%"
 		 "    <form id=\"quiz~0@*~a\" name=\"quiz~0@*~a\">~%"
-		 "~2@*~a"
+		 "~2@*~{~a~}"
 		 "        <br>~%"
 		 "        <input onclick=\"TrueOrFalse~0@*~a()\" type=\"button\" value=\"解答する\">~%"
 		 "    </form>~%"
