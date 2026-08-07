@@ -255,44 +255,65 @@
   (option-length 0   :type integer)
   (ans-number 0      :type integer))
 
-(defun skip-space (sequence &key (start 0))
-  (position-if (complement #'char-whitespace?) sequence :start start))
 
-(defun skip-brank-line (stream)
-  (loop :for str := (read-line stream)
-	:when (notevery #'char-whitespace? str)
-	  :return str))
+(defun parse-body (string initial?)
+  (if initial?
+      (and-let* (((string-prefix-p "Q." string))
+		 (pos (position-if (complement #'char-whitespace?) string :start 2)))
+	(subseq string pos))
+      string))
 
-(defun make-question-body (stream &aux (it (skip-brank-line stream)))
-  (unless (string-prefix-p "Q." it) (error 'invalid-question-sentence :sentence it))
-  (subseq it (skip-space it :start 2)))
+(defun parse-option (string)
+  (let* ((pos-1 (position-if (complement #'option-number?) string))
+	 (pos-2 (position-if (complement #'char-whitespace?) string :start pos-1)))
+    (subseq string pos-2)))
 
-(defun %make-question-options (question-num string)
-  (bind-with-values (num pos) (parse-option-number string :junk-allowed t)
-    (when num
-      (unless (= num question-num) (error 'unmatch-question-number))
-      (subseq string (skip-space string :start pos)))))
+(defun parse-answer (string)
+  (and-let* (((string-prefix-p "解答" string))
+	     (pos (position-if (complement #'char-whitespace?) string :start 2)))
+    (parse-option-number string :start pos :junk-allowed t)))
 
-(defun %make-question-answer (str)
-  (unless (string-prefix-p "解答" str) (error 'invalid-question-sentence :sentence str))
-  (parse-option-number str :start (skip-space str :start 2)))
+(defun list-right-trim-whitespace (list)
+  (cond ((null? list) nil)
+	((every (cut #'string=? <> "") list) nil)
+	(t (cons (car list) (list-right-trim-whitespace (cdr list))))))
 
-(defun make-question-options (stream &aux (length 0))
-  (loop :for str := (skip-brank-line stream)
-	:if (%make-question-options (1+ length) str)
-	  :collect :it :into options
-	  :and :do (inc@ length)
-	:else
-	  :return (when-let (ans (%make-question-answer str))
-		    (values options length ans))))
 
-(defun make-question (question-number stream &aux body options length ans)
-  (handler-case
-      (progn (set@ body (make-question-body stream)
-		   (values options length ans) (make-question-options stream))
-	     (%make-question :question-number question-number :body body :options options
-			     :option-length length :ans-number ans))
-    (end-of-file () nil)))
+
+(defmacro next@ (place)
+  `(ecase ,place
+     (:body   (set@ ,place :option))
+     (:option (set@ ,place :answer))))
+
+(defun make-question (question-number stream)
+  (loop :with phase := :body
+	:with initial? := t
+	:for str := (when-let (str (read-line stream nil nil)) (string-right-trim '(#\cr #\lf) str))
+	:when (null? str) :return nil
+	  :do (case phase
+		(:body   (when (string-prefix-p "①" str)   (next@ phase)))
+		(:option (when (string-prefix-p "解答" str) (next@ phase))))
+
+	:when (eq? phase :body)
+	  :if initial?
+	    :collect (parse-body str t) :into body :and
+	    :do (set@ initial? nil)
+	  :else
+	    :collect (string #\newline)   :into body :and
+	    :collect (parse-body str nil) :into body :end :else
+	:when (eq? phase :option)
+	  :when (some (complement #'char-whitespace?) str)
+	    :collect (parse-option str) :into options
+	    :and :count t :into length :end :else
+	:when (eq? phase :answer)
+	  :maximize (parse-answer str) :into ans-number
+	  :and :do (loop-finish) :end
+
+	:finally (return (%make-question :question-number question-number
+					 :body (apply #'string-append (list-right-trim-whitespace body))
+					 :options options
+					 :option-length length
+					 :ans-number ans-number))))
 
 (defun %make-questions (stream)
   (loop :for question-num :from 1
