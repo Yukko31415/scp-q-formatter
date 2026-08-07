@@ -275,8 +275,9 @@
 
 (defun list-right-trim-whitespace (list)
   (cond ((null? list) nil)
-	((every (cut #'string=? <> "") list) nil)
+	((every (cut #'member <> (list "" (string #\newline)) :test #'string=?) list) nil)
 	(t (cons (car list) (list-right-trim-whitespace (cdr list))))))
+
 
 
 
