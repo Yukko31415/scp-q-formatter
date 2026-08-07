@@ -175,11 +175,9 @@
   ;; number = a positive interger.
   ;; body = a string.
   ;; options = a list of strings.
-  (let ((option (apply #'concatenate 'string (loop :for i :from 1 :for opt :in options
-						   :collect (make-question-option i opt)))))
+  (let ((option (loop :for i :from 1 :for opt :in options
+		      :collect (make-question-option i opt))))
     (format stream *question-string* number body option)))
-
-
 
 
 ;; -----------------------------
