@@ -287,7 +287,7 @@
      (:option (set@ ,place :answer))))
 
 (defun make-question (question-number stream)
-  (loop :with phase := :body
+  (loop :with phase    := :body
 	:with initial? := t
 	:for str := (when-let (str (read-line stream nil nil)) (string-right-trim '(#\cr #\lf) str))
 	:when (null? str) :return nil
