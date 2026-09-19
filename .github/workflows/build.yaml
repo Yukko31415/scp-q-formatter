@@ -93,7 +93,14 @@ jobs:
                                    (user-homedir-pathname))))
           EOF
 
-          sbcl --non-interactive --eval '(progn (asdf:initialize-source-registry) (asdf:make :scp-q-formatter))'
+          sbcl --non-interactive \
+               --eval "(asdf:initialize-source-registry
+                         (list :source-registry
+                               (list :tree (uiop:parse-native-namestring
+                                             (uiop:getenv \"GITHUB_WORKSPACE\")))
+                               :inherit-configuration))" \
+               --eval '(asdf:make :scp-q-formatter)'
+
 
       # ========================================
       # 4. アーティファクトの回収
