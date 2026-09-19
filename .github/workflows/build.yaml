@@ -93,7 +93,7 @@ jobs:
                                    (user-homedir-pathname))))
           EOF
 
-          sbcl --eval '(asdf:make :scp-q-formatter)'
+          sbcl --non-interactive --eval '(progn (asdf:initialize-source-registry) (asdf:make :scp-q-formatter))'
 
       # ========================================
       # 4. アーティファクトの回収
