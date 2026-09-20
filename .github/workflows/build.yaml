@@ -80,6 +80,10 @@ jobs:
 
           # ocicl-runtime をロードする設定を書き込む
           cat > ~/.sbclrc << 'EOF'
+
+          (asdf:initialize-source-registry
+            (list :source-registry (list :directory (uiop:getcwd)) :inherit-configuration))
+          
           #-ocicl
           (when (probe-file #P"/usr/local/share/ocicl/ocicl-runtime.lisp")
             (load #P"/usr/local/share/ocicl/ocicl-runtime.lisp"))
@@ -91,11 +95,10 @@ jobs:
                                             (user-homedir-pathname)))
             (load (merge-pathnames "AppData/Local/ocicl/ocicl-runtime.lisp"
                                    (user-homedir-pathname))))
+
           EOF
 
           sbcl --non-interactive \
-               --eval "(asdf:initialize-source-registry
-	       	        (list :source-registry (list :directory (uiop:getcwd)) :inherit-configuration))" \
                --eval '(asdf:make :scp-q-formatter)'
 
 
