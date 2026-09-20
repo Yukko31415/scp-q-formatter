@@ -91,7 +91,7 @@ jobs:
             (load (merge-pathnames "AppData/Local/ocicl/ocicl-runtime.lisp"
                                    (user-homedir-pathname))))
 
-         (asdf:initialize-source-registry
+          (asdf:initialize-source-registry
             (list :source-registry (list :directory (uiop:getcwd)) :inherit-configuration))
             
           EOF
