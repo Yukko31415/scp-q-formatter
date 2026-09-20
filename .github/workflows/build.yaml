@@ -92,10 +92,13 @@ jobs:
                                             (user-homedir-pathname)))
             (load (merge-pathnames "AppData/Local/ocicl/ocicl-runtime.lisp"
                                    (user-homedir-pathname))))
-          (asdf:initialize-source-registry
-            (list :source-registry (list :directory (uiop:getcwd)) :inherit-configuration))
-
                                    
+          (asdf:initialize-source-registry
+                         (list :source-registry
+                               (list :tree (uiop:parse-native-namestring
+                                             (uiop:getenv \"GITHUB_WORKSPACE\")))
+                               :inherit-configuration))
+            
           EOF
 
           sbcl --non-interactive \
