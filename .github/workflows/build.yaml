@@ -82,8 +82,6 @@ jobs:
           cat > ~/.sbclrc << 'EOF'
           
           #-ocicl
-          (when (probe-file #P"/usr/local/share/ocicl/ocicl-runtime.lisp")
-            (load #P"/usr/local/share/ocicl/ocicl-runtime.lisp"))
           (when (probe-file (merge-pathnames ".local/share/ocicl/ocicl-runtime.lisp"
                                             (user-homedir-pathname)))
             (load (merge-pathnames ".local/share/ocicl/ocicl-runtime.lisp"
@@ -92,6 +90,9 @@ jobs:
                                             (user-homedir-pathname)))
             (load (merge-pathnames "AppData/Local/ocicl/ocicl-runtime.lisp"
                                    (user-homedir-pathname))))
+
+         (asdf:initialize-source-registry
+            (list :source-registry (list :directory (uiop:getcwd)) :inherit-configuration))
             
           EOF
 
