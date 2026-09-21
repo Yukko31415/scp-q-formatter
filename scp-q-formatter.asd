@@ -4,7 +4,7 @@
   :version "0.7.5"
   :author "Yukko"
   :license "CC0"
-  :depends-on ("alexandria" "cl-scheme-like-syntax")
+  :depends-on (:alexandria :cl-scheme-like-syntax)
   :components ((:file "main"))
   :description "SCP財団問答部門のモック作成を簡単にするスクリプト"
   :build-operation "program-op"
