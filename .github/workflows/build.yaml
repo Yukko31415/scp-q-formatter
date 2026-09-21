@@ -72,9 +72,7 @@ jobs:
       # ========================================
       - name: Install Dependencies and Build Executable
         shell: bash
-        working-directory: ${{ github.workspace }}
-        env:
-          OCICL_LOCAL_ONLY: '1'
+
         run: |
           ocicl install
 
@@ -97,11 +95,6 @@ jobs:
           EOF
 
           sbcl --non-interactive \
-               --eval "(asdf:initialize-source-registry
-                         (list :source-registry
-                               (list :tree (uiop:parse-native-namestring
-                                             (uiop:getenv \"GITHUB_WORKSPACE\")))
-                               :inherit-configuration))" \
                --eval '(asdf:make :scp-q-formatter)'
 
 
