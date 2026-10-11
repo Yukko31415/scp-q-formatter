@@ -81,6 +81,8 @@ jobs:
           # ocicl-runtime をロードする設定を書き込む
           cat > ~/.sbclrc << 'EOF'
 
+          (require 'asdf)
+          
           (asdf:initialize-source-registry
             (list :source-registry (list :tree (uiop:getcwd)) :inherit-configuration))
             
