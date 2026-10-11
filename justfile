@@ -6,7 +6,11 @@ exec port="4005" client="sly":
 	     --eval '(asdf:load-system :{{ if client == "slime" { "swank" } else { "slynk" } }})' \
 		 --eval '({{ if client == "slime" { "swank" } else { "slynk" } }}:create-server :port {{port}} :dont-close t)'
 
+
+app := file_name(justfile_directory())
 make:
 	ocicl install
-	sbcl --noinform --eval '(asdf:make :scp-q-formatter)' --quit
+	buildapp --asdf-tree '{{app}}' \
+	         --eval '(asdf:make :scp-q-formatter)'
+
 
